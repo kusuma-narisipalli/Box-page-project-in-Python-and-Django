@@ -1,0 +1,122 @@
+# Create a new Django project
+django-admin startproject suggestion_box
+
+# Go to the project directory
+cd suggestion_box
+
+# Create a new app called 'suggestion'
+python manage.py startapp suggestion
+
+# Add the 'suggestion' app to the INSTALLED_APPS in settings.py
+INSTALLED_APPS = [
+    ...
+    'suggestion',
+]
+
+# Create the models for the suggestion and resolution objects
+
+# The suggestion model
+class Suggestion(models.Model):
+    title = models.CharField(max_length=255)
+    description = models.TextField()
+    resolution = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+# The resolution model
+class Resolution(models.Model):
+    suggestion = models.ForeignKey(Suggestion, on_delete=models.CASCADE)
+    description = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+# Create the views for the suggestion and resolution objects
+
+# The suggestion view
+def suggestion_view(request):
+    suggestions = Suggestion.objects.all()
+    return render(request, 'suggestion.html', {'suggestions': suggestions})
+
+# The resolution view
+def resolution_view(request, suggestion_id):
+    suggestion = Suggestion.objects.get(id=suggestion_id)
+    resolutions = suggestion.resolutions.all()
+    return render(request, 'resolution.html', {'suggestion': suggestion, 'resolutions': resolutions})
+
+# Create the urls for the suggestion and resolution views
+
+urlpatterns = [
+    path('', suggestion_view, name='suggestion'),
+    path('resolution/<int:suggestion_id>', resolution_view, name='resolution'),
+]
+
+# Run the migrations
+python manage.py migrate
+
+# Start the development server
+python manage.py runserver
+
+
+Frontend:
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Suggestion Box</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+<div class="container">
+    <h1>Suggestion Box</h1>
+    <ul>
+        {% for suggestion in suggestions %}
+        <li>
+            <h3>{{ suggestion.title }}</h3>
+            <p>{{ suggestion.description }}</p>
+            <ul>
+                {% for resolution in suggestion.resolutions %}
+                <li>{{ resolution.description }}</li>
+                {% endfor %}
+            </ul>
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+</body>
+</html>
+
+
+body {
+    font-family: sans-serif;
+}
+
+h1 {
+    font-size: 1.5em;
+}
+
+ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+}
+
+li {
+    padding: 10px;
+}
+
+
+$(document).ready(function() {
+    // Get all the suggestions
+    var suggestions = $("ul li");
+
+    // Add an event listener to each suggestion
+    suggestions.on("click", function() {
+        // Get the id of the suggestion
+        var suggestionId = $(this).attr("id");
+
+        // Redirect to the resolution view for the suggestion
+        window.location.href = "/resolution/" + suggestionId;
+    });
+});
